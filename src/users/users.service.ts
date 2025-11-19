@@ -18,7 +18,6 @@ export class UsersService {
 
   async create(data: CreateUserDto) {
     const existingUser = await this.findByMail(data.email);
-
     if (existingUser) {
       throw new ConflictException('Email already registered');
     }
