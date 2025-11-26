@@ -17,19 +17,37 @@ export class UsersService {
   }
 
   async create(data: CreateUserDto) {
-    const existingUser = await this.findByMail(data.email);
-    if (existingUser) {
-      throw new ConflictException('Email already registered');
-    }
+    console.log('🟦 RAW PASSWORD SENT →', JSON.stringify(data.password));
+
     const hashedPassword = await this.hashPassword(data.password);
+
+    console.log('🟩 HASH CREATED →', hashedPassword);
 
     return this.prisma.user.create({
       data: {
         email: data.email,
         fullName: data.fullName,
         password: hashedPassword,
-        role: 'MEMBER', // default
+        role: 'MEMBER',
       },
+    });
+  }
+
+  updateuser(id: string, refreshedToken: any) {
+    return this.prisma.user.update({
+      where: { id: id },
+      data: { refreshToken: refreshedToken },
+    });
+  }
+  async findById(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+    });
+  }
+
+  removeuser(id: string) {
+    return this.prisma.user.delete({
+      where: { id },
     });
   }
 
