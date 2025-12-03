@@ -20,7 +20,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findByMail(email);
-    console.log('validateUser → user from DB:', user);
+    console.log('validateUser → user.ts from DB:', user);
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
     // Compare bcrypt hashes
@@ -53,10 +53,9 @@ export class AuthService {
     const hashedRt = await bcrypt.hash(refreshToken, 10);
 
     await this.usersService.updateuser(user.id, hashedRt);
-
     return {
-      accessToken,
-      refreshToken,
+      access_token: accessToken,
+      refresh_token: refreshToken,
     };
   }
 
@@ -71,7 +70,7 @@ export class AuthService {
       const user = await this.usersService.findById(decoded.sub);
 
       if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Token expired or user logged out');
+        throw new UnauthorizedException('Token expired or user.ts logged out');
       }
 
       // compare refresh token with stored hashed version

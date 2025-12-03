@@ -1,30 +1,282 @@
+// ============================================
+// GENERATOR & DATASOURCE (REQUIRED BY PRISMA)
+// ============================================
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // or "mysql" or "sqlite"
   url      = env("DATABASE_URL")
 }
 
+// =========================
+// ENUMS
+// =========================
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum GroupType {
+  FAMILY
+  FRIENDS
+  ROOMMATES
+  NEIGHBORS
+
+  TEAM
+  DEPARTMENT
+  PROJECT
+
+  CLASS
+  CLUB
+  ASSOCIATION
+
+  SPORTS
+  COMMUNITY
+  EVENT
+
+  WORK
+  OTHER
+}
+
+enum GroupMemberStatus {
+  INVITED
+  ACCEPTED
+  REJECTED
+  REMOVED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RepetitionType {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+// =========================
+// USER MODEL
+// =========================
+
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String  @id @default(uuid())
+  email        String  @unique
   password     String
   fullName     String
   avatarUrl    String?
-  role         String   @default("MEMBER")
-  familyId     String?
-  family       Family?  @relation(fields: [familyId], references: [id])
-  refreshToken String? // 🔥 Add this for refresh token rotation
-  createdAt    DateTime @default(now())
+  refreshToken String?
+
+  // Professional & identity fields
+  phone    String?
+  bio      String?
+  jobTitle String?
+  company  String?
+
+  timezone String? // Needed for calendar + notifications
+  language String? // For future localization
+
+  // Relations
+  workspaces WorkspaceMember[]
+  groups     GroupMember[]
+  tasks      Task[]            @relation("UserTasksCreated")
+  assigned   Task[]            @relation("UserTasksAssigned")
+
+  events CalendarEvent[] @relation("UserEvents")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  Workspace Workspace[]
+
+  Group       Group[]
+  ActivityLog ActivityLog[]
 }
 
-model Family {
-  id         String   @id @default(uuid())
-  name       String
-  ownerId    String
-  members    User[]
-  inviteCode String?
-  createdAt  DateTime @default(now())
+// =========================
+// WORKSPACE (Professional organization level)
+// =========================
+
+model Workspace {
+  id      String @id @default(uuid())
+  name    String
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  groups  Group[]
+  members WorkspaceMember[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+  ActivityLog ActivityLog[]
+}
+
+model WorkspaceMember {
+  id          String        @id @default(uuid())
+  userId      String
+  workspaceId String
+  role        WorkspaceRole @default(MEMBER)
+
+  user      User      @relation(fields: [userId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  joinedAt DateTime @default(now())
+
+  @@unique([userId, workspaceId])
+}
+
+// =========================
+// GROUP MODEL (Teams/Families/Friends/etc.)
+// =========================
+
+model Group {
+  id          String    @id @default(uuid())
+  name        String
+  type        GroupType @default(FAMILY)
+  description String?
+  iconUrl     String?
+  tags        String[]
+  settings    Json?
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+
+  members GroupMember[]
+  tasks   Task[]
+  events  CalendarEvent[]
+
+  inviteCode  String?       @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+  ActivityLog ActivityLog[]
+}
+
+model GroupMember {
+  id        String            @id @default(uuid())
+  userId    String
+  groupId   String
+  role      GroupRole         @default(MEMBER)
+  invitedBy String?
+  status    GroupMemberStatus @default(ACCEPTED)
+  joinedAt  DateTime          @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+}
+
+// =========================
+// TASKS (Phase E Ready)
+// =========================
+
+model Task {
+  id          String  @id @default(uuid())
+  title       String
+  description String?
+
+  status   TaskStatus   @default(TODO)
+  priority TaskPriority @default(MEDIUM)
+
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("UserTasksCreated", fields: [createdById], references: [id])
+
+  assignedToId String?
+  assignedTo   User?         @relation("UserTasksAssigned", fields: [assignedToId], references: [id])
+  ActivityLog  ActivityLog[]
+}
+
+model ActivityLog {
+  id String @id @default(uuid())
+
+  // Who performed the action
+  actorId String
+  actor   User   @relation(fields: [actorId], references: [id])
+
+  // Which task was affected
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id])
+
+  // Group and workspace (for filtering & analytics)
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id])
+
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+
+  // What happened
+  type ActivityLogType
+
+  // Before / After change (JSON)
+  oldValue Json?
+  newValue Json?
+
+  createdAt DateTime @default(now())
+}
+
+enum ActivityLogType {
+  CREATED
+  UPDATED
+  ASSIGNED
+  UNASSIGNED
+  STATUS_CHANGED
+  COMMENTED
+  DELETED
+}
+
+// =========================
+// CALENDAR EVENTS (Phase F Ready)
+// =========================
+
+model CalendarEvent {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  date        DateTime
+  startTime   DateTime?
+  endTime     DateTime?
+
+  repetition RepetitionType @default(NONE)
+
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("UserEvents", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
 }
