@@ -10,13 +10,16 @@ import {
   QueryTaskDto,
   UpdateTaskDto,
 } from './dto/task.dto';
+import { WorkspaceService } from '../workspace/workspace.service';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class TasksService {
   constructor(
     private prisma: PrismaService,
     private groupsService: GroupsService,
-    private usersService: UsersService,
+    private workspaceService: WorkspaceService,
+    private activityService: ActivityService,
   ) {}
 
   // ------------------------------------------------------
@@ -28,7 +31,17 @@ export class TasksService {
       dto.groupId,
     );
 
-    let callerRole = callerMemberShip.role;
+    const workspaceId = await this.groupsService.getGroupWorkspaceId(
+      dto.groupId,
+    );
+
+    if (!workspaceId) {
+      throw new NotFoundException('Group does not belong to any workspace');
+    }
+
+    await this.workspaceService.validateUserInWorkspace(userId, workspaceId);
+
+    const callerRole = callerMemberShip.role;
     if (
       callerRole !== 'ADMIN' &&
       callerRole !== 'OWNER' &&
@@ -49,8 +62,7 @@ export class TasksService {
       },
     });
 
-    // TODO E.8 — activity log
-    // TODO E.9 — calendar sync
+    this.activityService.logTaskCreation(userId, task);
     // TODO Phase H — notifications
 
     return task as Task;
@@ -64,7 +76,22 @@ export class TasksService {
 
     // E.5.1 — Filter by group
     if (query.groupId) {
+      // E.6 — validate group membership
       await this.groupsService.validateUserInGroup(userId, query.groupId);
+
+      // E.7.1 — get workspaceId of that group
+      const workspaceId = await this.groupsService.getGroupWorkspaceId(
+        query.groupId,
+      );
+
+      // E.7.1 — validate workspace membership
+      if (workspaceId) {
+        await this.workspaceService.validateUserInWorkspace(
+          userId,
+          workspaceId,
+        );
+      }
+
       filters.groupId = query.groupId;
     }
 
@@ -126,6 +153,11 @@ export class TasksService {
 
     await this.groupsService.validateUserInGroup(userId, task.groupId);
 
+    const workspaceId = await this.groupsService.getGroupWorkspaceId(
+      task.groupId,
+    );
+    await this.workspaceService.validateUserInWorkspace(userId, workspaceId);
+
     return task as Task;
   }
 
@@ -147,6 +179,11 @@ export class TasksService {
       userId,
       task.groupId,
     );
+    const workspaceId = await this.groupsService.getGroupWorkspaceId(
+      task.groupId,
+    );
+    await this.workspaceService.validateUserInWorkspace(userId, workspaceId);
+
     const callerRole = callerMembership.role;
 
     if (callerRole === 'MEMBER') {
@@ -169,9 +206,15 @@ export class TasksService {
       },
     });
 
-    // TODO E.8 — log update
-    // TODO E.9 — calendar sync
-
+    await this.activityService.logTaskUpdate(userId, task, updatedTask);
+    if (dto.status && dto.status !== task.status) {
+      await this.activityService.logStatusChange(
+        userId,
+        updatedTask,
+        task.status,
+        dto.status,
+      );
+    }
     return updatedTask as Task;
   }
 
@@ -201,7 +244,7 @@ export class TasksService {
       where: { id: taskId },
     });
 
-    // TODO E.8 — log deletion
+    await this.activityService.logTaskDeletion(userId, task);
 
     return deleted as Task;
   }

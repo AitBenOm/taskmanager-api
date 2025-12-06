@@ -1,0 +1,116 @@
+A — Authentication & Users
+    A.1 AuthModule
+    A.2 JWT (Access + Refresh)
+    A.3 User Profiles
+    A.4 Password reset, MFA (optional)
+
+B — Workspace System
+    B.1 Workspace model
+    B.2 WorkspaceMember model
+    B.3 Workspace CRUD
+    B.4 Workspace RBAC (OWNER / ADMIN / MEMBER / VIEWER)
+
+C — Group System
+    C.1 Group model
+    C.2 GroupMember model
+    C.3 Group invitations
+    C.4 Group RBAC
+
+D — Notifications System (Basic hooks)
+
+E — TASK SYSTEM (Enterprise)
+    E.1 Prisma model (Task)
+    E.2 TasksModule / controller / service
+    E.3 CRUD Endpoints
+    E.4 Assignment Logic
+    E.5 Filters & Search
+    E.6 Group Integration
+    E.7 Workspace Integration + RBAC
+    E.8 Activity Log System
+    E.9 Prepare Calendar Sync
+
+F — Calendar Events
+    F.1 CalendarEvent model
+    F.2 Repetition logic
+    F.3 Integration with tasks
+    F.4 Calendar feed
+
+G — Attachments & Storage
+    G.1 S3 / Firebase Storage
+    G.2 File upload module
+    G.3 Connect files to tasks & comments
+
+H — Comments System (Task Comments)
+    H.1 Comment model
+    H.2 Replies / threads
+    H.3 Mentions @user
+    H.4 Activity Log integration
+    H.5 Notifications integration
+
+I — Real-Time (WebSockets)
+    I.1 Task updates in real time
+    I.2 Comments in real time
+    I.3 Online users & presence
+
+J — Notifications (Full)
+    J.1 Email notifications
+    J.2 Push notifications
+    J.3 Task reminders
+    J.4 Digest system
+
+K — Roles & Permissions (Enterprise RBAC)
+    K.1 Permission matrix
+    K.2 API permission checks
+    K.3 Admin dashboard roles editor
+
+L — Integrations
+    L.1 Google Calendar
+    L.2 Outlook Calendar
+    L.3 Slack / Teams (optional)
+
+M — Templates System
+    M.1 Task templates
+    M.2 Group templates
+    M.3 Workspace templates
+
+N — Gamification
+    N.1 Points system
+    N.2 Badges
+    N.3 Leaderboard per workspace/group
+
+O — Analytics
+    O.1 Task metrics
+    O.2 Productivity analytics
+    O.3 Calendar analytics
+    O.4 AI-driven insights
+
+P — Export / Import
+    P.1 CSV Export
+    P.2 Calendar ICS Export
+    P.3 Workspace import/export
+
+S — AI INTELLIGENCE
+    S.1 Task prediction
+    S.2 Deadline prediction
+    S.3 Proof-of-done validation
+    S.4 Auto-tagging
+    S.5 Smart suggestions
+
+    A — Auth Pages
+    B — Workspace creation, settings, switching
+    C — Groups management
+    D — Notifications UI
+    E — Tasks frontend (boards, lists, forms)
+    F — Calendar frontend
+    G — Dashboard layout + widgets
+    H — Comments UI
+    I — Real-time updates
+    J — Notification center
+    K — Roles & permissions UI
+    L — Integrations settings UI
+    M — Templates UI
+    N — Gamification UI
+    O — Analytics & reports UI
+    P — Export/Import UI
+    S — AI UI (smart suggestions, insights)
+

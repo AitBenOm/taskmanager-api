@@ -54,7 +54,7 @@ export class GroupsService {
   // --------------------------------------------------------------------------
   async validateUserInGroup(
     userId: string,
-    groupId: string,
+    groupId: any,
   ): Promise<GroupMember> {
     // 1. Check group existence
     const group = await this.getGroupById(groupId);
@@ -99,5 +99,15 @@ export class GroupsService {
   async isUserGroupOwner(userId: string, groupId: string): Promise<boolean> {
     const membership = await this.getUserMembership(userId, groupId);
     return membership.role === 'OWNER';
+  }
+
+  // STEP 1 — Helper: get workspaceId from a group
+  async getGroupWorkspaceId(groupId: string): Promise<string | null> {
+    const group = await this.prisma.group.findUnique({
+      where: { id: groupId },
+      select: { workspaceId: true },
+    });
+
+    return group?.workspaceId ?? null;
   }
 }

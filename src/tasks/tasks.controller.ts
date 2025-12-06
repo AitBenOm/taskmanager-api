@@ -1,11 +1,11 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Delete,
   Body,
+  Controller,
+  Delete,
+  Get,
   Param,
+  Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -99,3 +99,4 @@ export class TasksController {
   getTasksByGroup(@GetUser('id') userId: string, @Param('id') groupId: string) {
     return this.tasksService.getTasksByGroup(userId, groupId);
   }
+}
