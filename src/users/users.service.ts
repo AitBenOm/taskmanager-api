@@ -28,7 +28,6 @@ export class UsersService {
         email: data.email,
         fullName: data.fullName,
         password: hashedPassword,
-        role: 'MEMBER',
       },
     });
   }
@@ -47,8 +46,6 @@ export class UsersService {
         email: true,
         fullName: true,
         avatarUrl: true,
-        role: true,
-        familyId: true,
         refreshToken: true,
         createdAt: true,
       },
@@ -67,8 +64,6 @@ export class UsersService {
         email: true,
         fullName: true,
         avatarUrl: true,
-        role: true,
-        familyId: true,
         refreshToken: true,
         createdAt: true,
       },
@@ -115,5 +110,16 @@ export class UsersService {
     });
 
     return { message: 'Password updated successfully' };
+  }
+  async validateUserExists(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new ConflictException('User not found');
+    }
+
+    return user;
   }
 }
