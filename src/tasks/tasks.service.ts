@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GroupsService } from 'src/groups/groups.service';
-import { UsersService } from 'src/users/users.service';
 import { Task, TaskPriority, TaskStatus } from '@prisma/client';
 
 import {
@@ -59,6 +58,7 @@ export class TasksService {
         dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
         groupId: dto.groupId,
         createdById: userId,
+        parentId: dto.parentId ?? null,
       },
     });
 
@@ -124,11 +124,18 @@ export class TasksService {
       filters.dueDate = new Date(query.dueDate);
     }
 
+    if (query.parentId !== undefined) {
+      filters.parentId = query.parentId;
+    }
+
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
 
     const tasks = await this.prisma.task.findMany({
       where: filters,
+      include: {
+        subtasks: true,
+      },
       orderBy: query.sortBy
         ? { [query.sortBy]: query.order ?? 'asc' }
         : { createdAt: 'desc' },
@@ -145,6 +152,9 @@ export class TasksService {
   async getTaskById(userId: string, taskId: string): Promise<Task> {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
+      include: {
+        subtasks: true,
+      },
     });
 
     if (!task) {
@@ -203,6 +213,8 @@ export class TasksService {
       data: {
         ...dto,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : task.dueDate,
+        parentId: dto.parentId ?? task.parentId,
+        assignedToId: dto.assignedToId ?? task.assignedToId,
       },
     });
 

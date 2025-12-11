@@ -23,7 +23,7 @@ import {
 } from './dto/task.dto';
 
 @Controller('tasks')
-@UseGuards(JwtAuthGuard, TasksGuard)
+@UseGuards(JwtAuthGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
@@ -32,6 +32,7 @@ export class TasksController {
   // ------------------------------------------------------
   @Post()
   createTask(@GetUser() user, @Body() dto: CreateTaskDto) {
+    console.log('Creating task for user:', user.id);
     return this.tasksService.createTask(user.id, dto);
   }
 
@@ -60,7 +61,7 @@ export class TasksController {
     @Param('id') id: string,
     @Body() dto: UpdateTaskDto,
   ) {
-    return this.tasksService.updateTask(user.id, id, dto);
+    return this.tasksService.updateTask(user?.id, id, dto);
   }
 
   // ------------------------------------------------------
