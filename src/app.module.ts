@@ -20,6 +20,7 @@ import { ActivityModule } from './activity/activity.module';
     UsersModule,
     AuthModule,
     PrismaModule,
+    TasksModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

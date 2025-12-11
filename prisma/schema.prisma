@@ -1,5 +1,5 @@
 // ============================================
-// GENERATOR & DATASOURCE (REQUIRED BY PRISMA)
+// GENERATOR & DATASOURCE
 // ============================================
 
 generator client {
@@ -7,13 +7,13 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // or "mysql" or "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// =========================
+// ============================================
 // ENUMS
-// =========================
+// ============================================
 
 enum WorkspaceRole {
   OWNER
@@ -79,9 +79,9 @@ enum RepetitionType {
   YEARLY
 }
 
-// =========================
+// ============================================
 // USER MODEL
-// =========================
+// ============================================
 
 model User {
   id           String  @id @default(uuid())
@@ -91,35 +91,32 @@ model User {
   avatarUrl    String?
   refreshToken String?
 
-  // Professional & identity fields
   phone    String?
   bio      String?
   jobTitle String?
   company  String?
 
-  timezone String? // Needed for calendar + notifications
-  language String? // For future localization
+  timezone String?
+  language String?
 
-  // Relations
   workspaces WorkspaceMember[]
   groups     GroupMember[]
   tasks      Task[]            @relation("UserTasksCreated")
   assigned   Task[]            @relation("UserTasksAssigned")
 
   events CalendarEvent[] @relation("UserEvents")
+  logs   ActivityLog[]   @relation("ActivityUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   Workspace Workspace[]
-
-  Group       Group[]
-  ActivityLog ActivityLog[]
+  Group     Group[]
 }
 
-// =========================
-// WORKSPACE (Professional organization level)
-// =========================
+// ============================================
+// WORKSPACE
+// ============================================
 
 model Workspace {
   id      String @id @default(uuid())
@@ -129,10 +126,10 @@ model Workspace {
 
   groups  Group[]
   members WorkspaceMember[]
+  logs    ActivityLog[]
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now()) @updatedAt
-  ActivityLog ActivityLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model WorkspaceMember {
@@ -149,9 +146,9 @@ model WorkspaceMember {
   @@unique([userId, workspaceId])
 }
 
-// =========================
-// GROUP MODEL (Teams/Families/Friends/etc.)
-// =========================
+// ============================================
+// GROUP MODEL
+// ============================================
 
 model Group {
   id          String    @id @default(uuid())
@@ -171,11 +168,11 @@ model Group {
   members GroupMember[]
   tasks   Task[]
   events  CalendarEvent[]
+  logs    ActivityLog[]
 
-  inviteCode  String?       @unique
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now()) @updatedAt
-  ActivityLog ActivityLog[]
+  inviteCode String?  @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 }
 
 model GroupMember {
@@ -193,9 +190,9 @@ model GroupMember {
   @@unique([userId, groupId])
 }
 
-// =========================
+// ============================================
 // TASKS (Phase E Ready)
-// =========================
+// ============================================
 
 model Task {
   id          String  @id @default(uuid())
@@ -209,6 +206,16 @@ model Task {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
 
+  // -----------------------------
+  // Parent / Subtask relationship
+  // -----------------------------
+  parentId String?
+  parent   Task?   @relation("TaskSubtasks", fields: [parentId], references: [id])
+  subtasks Task[]  @relation("TaskSubtasks")
+
+  // -----------------------------
+  // Group / workspace relationships
+  // -----------------------------
   groupId String
   group   Group  @relation(fields: [groupId], references: [id])
 
@@ -216,51 +223,14 @@ model Task {
   createdBy   User   @relation("UserTasksCreated", fields: [createdById], references: [id])
 
   assignedToId String?
-  assignedTo   User?         @relation("UserTasksAssigned", fields: [assignedToId], references: [id])
-  ActivityLog  ActivityLog[]
+  assignedTo   User?   @relation("UserTasksAssigned", fields: [assignedToId], references: [id])
+
+  logs ActivityLog[]
 }
 
-model ActivityLog {
-  id String @id @default(uuid())
-
-  // Who performed the action
-  actorId String
-  actor   User   @relation(fields: [actorId], references: [id])
-
-  // Which task was affected
-  taskId String
-  task   Task   @relation(fields: [taskId], references: [id])
-
-  // Group and workspace (for filtering & analytics)
-  groupId String
-  group   Group  @relation(fields: [groupId], references: [id])
-
-  workspaceId String?
-  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
-
-  // What happened
-  type ActivityLogType
-
-  // Before / After change (JSON)
-  oldValue Json?
-  newValue Json?
-
-  createdAt DateTime @default(now())
-}
-
-enum ActivityLogType {
-  CREATED
-  UPDATED
-  ASSIGNED
-  UNASSIGNED
-  STATUS_CHANGED
-  COMMENTED
-  DELETED
-}
-
-// =========================
-// CALENDAR EVENTS (Phase F Ready)
-// =========================
+// ============================================
+// CALENDAR EVENTS
+// ============================================
 
 model CalendarEvent {
   id          String    @id @default(uuid())
@@ -277,6 +247,33 @@ model CalendarEvent {
 
   createdById String
   createdBy   User   @relation("UserEvents", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// ============================================
+// ACTIVITY LOG (Phase E.8)
+// ============================================
+
+model ActivityLog {
+  id String @id @default(uuid())
+
+  // Relations
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id])
+
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id])
+
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+
+  userId String
+  user   User   @relation("ActivityUser", fields: [userId], references: [id])
+
+  // Data
+  action   String
+  metadata Json?
 
   createdAt DateTime @default(now())
 }

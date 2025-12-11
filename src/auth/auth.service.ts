@@ -2,7 +2,6 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto } from './login.dto';
 
 @Injectable()
 export class AuthService {
@@ -20,7 +19,6 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findByMail(email);
-    console.log('validateUser → user.ts from DB:', user);
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
     // Compare bcrypt hashes
@@ -42,7 +40,8 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: '15m',
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: '1h',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
