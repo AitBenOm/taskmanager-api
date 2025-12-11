@@ -119,10 +119,12 @@ model User {
 // ============================================
 
 model Workspace {
-  id      String @id @default(uuid())
-  name    String
-  ownerId String
-  owner   User   @relation(fields: [ownerId], references: [id])
+  id          String  @id @default(uuid())
+  name        String
+  inviteCode  String?
+  description String?
+  ownerId     String
+  owner       User    @relation(fields: [ownerId], references: [id])
 
   groups  Group[]
   members WorkspaceMember[]
