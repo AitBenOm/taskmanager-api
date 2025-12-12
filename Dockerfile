@@ -3,18 +3,19 @@
 # --------------------------------------------------
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
-# Copy the rest of the backend code
+COPY prisma ./prisma
+
+RUN npx prisma generate
+
 COPY . .
 
-# Build NestJS into dist/
 RUN npm run build
+
 
 
 
