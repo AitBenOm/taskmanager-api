@@ -50,6 +50,8 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+      - name: Install dependencies     # <── REQUIRED
+        run: npm install
       - name: Run tests
         run: npm test
   build:
@@ -80,8 +82,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Build backend Docker image
         run: |
-            docker build \
-              -t taskmanager-api:${{ github.sha }} \
-              ./taskmanager-api
+          docker build \
+            -t taskmanager-api:${{ github.sha }} \
+            ./taskmanager-api
 
     
