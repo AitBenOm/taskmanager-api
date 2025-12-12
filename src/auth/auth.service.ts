@@ -72,32 +72,31 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string) {
     try {
-      // decode token (does NOT verify secret)
-      const decoded: string = this.jwtService.decode(refreshToken);
+      const decoded: unknown = this.jwtService.decode(refreshToken);
 
       if (
         typeof decoded !== 'object' ||
         decoded === null ||
-        !(decoded != null && 'sub' in decoded)
+        !('sub' in decoded)
       ) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const sub = (decoded as Record<string, null>).sub;
+      const { sub } = decoded as JwtPayload;
+
       const user = (await this.usersService.findById(sub)) as User | null;
 
       if (!user || !user.refreshToken) {
         throw new UnauthorizedException('Token expired or user logged out');
       }
 
-      // compare refresh token with stored hashed version
       const valid = await bcrypt.compare(refreshToken, user.refreshToken);
       if (!valid) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      // ROTATION: generate new access token + new refresh token
-      return this.login(user); // login() will rotate tokens automatically
+      // rotate tokens
+      return this.login(user);
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }

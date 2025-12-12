@@ -11,9 +11,6 @@ import { GroupsService } from 'src/groups/groups.service';
 
 interface RequestWithUser extends Request {
   user?: { id: string } | null;
-  params?: { id?: string };
-  query?: { groupId?: string | string[] } & Record<string, unknown>;
-  body?: { groupId?: string } & Record<string, unknown>;
 }
 
 @Injectable()
@@ -45,10 +42,15 @@ export class TasksGuard implements CanActivate {
       groupIdFromQuery = q[0];
     }
 
-    let groupIdFromBody: string | undefined;
-    if (request.body && typeof request.body.groupId === 'string') {
-      groupIdFromBody = request.body.groupId;
-    }
+    const body: unknown = request.body;
+
+    const groupIdFromBody =
+      typeof body === 'object' &&
+      body !== null &&
+      'groupId' in body &&
+      typeof (body as Record<string, unknown>).groupId === 'string'
+        ? (body as Record<string, unknown>).groupId
+        : undefined;
 
     // ---------------------------------------------
     // 1. If taskId is provided → validate access to that task
