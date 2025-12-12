@@ -5,8 +5,6 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 
-
-
 interface JwtPayload {
   sub: string;
   email: string;
@@ -75,17 +73,17 @@ export class AuthService {
   async refreshTokens(refreshToken: string) {
     try {
       // decode token (does NOT verify secret)
-      const decoded = this.jwtService.decode(refreshToken);
+      const decoded: string = this.jwtService.decode(refreshToken);
 
       if (
         typeof decoded !== 'object' ||
         decoded === null ||
-        !('sub' in decoded)
+        !(decoded != null && 'sub' in decoded)
       ) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const sub = String((decoded as Record<string, unknown>).sub);
+      const sub = (decoded as Record<string, null>).sub;
       const user = (await this.usersService.findById(sub)) as User | null;
 
       if (!user || !user.refreshToken) {

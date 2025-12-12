@@ -21,7 +21,7 @@ export class WorkspaceService {
     return workspace;
   }
 
-  async validateUserInWorkspace(userId: string, workspaceId: any) {
+  async validateUserInWorkspace(userId: string, workspaceId: string) {
     const workspace = await this.getWorkspaceById(workspaceId);
 
     const memberberShip = await this.prisma.workspaceMember.findFirst({

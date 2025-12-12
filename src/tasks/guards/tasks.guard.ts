@@ -9,7 +9,6 @@ import { Request } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GroupsService } from 'src/groups/groups.service';
 
-// @ts-ignore
 interface RequestWithUser extends Request {
   user?: { id: string } | null;
   params?: { id?: string };
