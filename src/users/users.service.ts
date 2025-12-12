@@ -32,7 +32,7 @@ export class UsersService {
     });
   }
 
-  updateuser(id: string, refreshedToken: any) {
+  updateuser(id: string, refreshedToken: string) {
     return this.prisma.user.update({
       where: { id: id },
       data: { refreshToken: refreshedToken },

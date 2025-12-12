@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, Task } from '@prisma/client';
 
 @Injectable()
 export class ActivityService {
@@ -33,12 +33,12 @@ export class ActivityService {
   // ------------------------------------------------------
   // 1) TASK CREATED
   // ------------------------------------------------------
-  async logTaskCreation(userId: string, task: any) {
+  async logTaskCreation(userId: string, task: Task) {
     return this.createLog({
       userId,
-      taskId: task.id,
+      taskId: task?.id,
       groupId: task.groupId,
-      workspaceId: task.group?.workspaceId ?? null,
+      workspaceId: null,
       action: 'TASK_CREATED',
       metadata: {
         title: task.title,
@@ -52,12 +52,12 @@ export class ActivityService {
   // ------------------------------------------------------
   // 2) TASK UPDATED (full before/after diff)
   // ------------------------------------------------------
-  async logTaskUpdate(userId: string, oldTask: any, newTask: any) {
+  async logTaskUpdate(userId: string, oldTask: Task, newTask: Task) {
     return this.createLog({
       userId,
       taskId: oldTask.id,
       groupId: oldTask.groupId,
-      workspaceId: oldTask.group?.workspaceId ?? null,
+      // workspaceId: oldTask.group?.workspaceId ?? null,
       action: 'TASK_UPDATED',
       metadata: {
         old: {
@@ -81,12 +81,12 @@ export class ActivityService {
   // ------------------------------------------------------
   // 3) TASK DELETED
   // ------------------------------------------------------
-  async logTaskDeletion(userId: string, task: any) {
+  async logTaskDeletion(userId: string, task: Task) {
     return this.createLog({
       userId,
       taskId: task.id,
       groupId: task.groupId,
-      workspaceId: task.group?.workspaceId ?? null,
+      //workspaceId: task.group?.workspaceId ?? null,
       action: 'TASK_DELETED',
       metadata: {
         title: task.title,
@@ -99,12 +99,12 @@ export class ActivityService {
   // ------------------------------------------------------
   // 4) ASSIGN TASK
   // ------------------------------------------------------
-  async logTaskAssignment(userId: string, task: any, assignedUserId: string) {
+  async logTaskAssignment(userId: string, task: Task, assignedUserId: string) {
     return this.createLog({
       userId,
       taskId: task.id,
       groupId: task.groupId,
-      workspaceId: task.group?.workspaceId ?? null,
+      //workspaceId: task.group?.workspaceId ?? null,
       action: 'TASK_ASSIGNED',
       metadata: {
         assignedTo: assignedUserId,
@@ -115,12 +115,12 @@ export class ActivityService {
   // ------------------------------------------------------
   // 5) UNASSIGN TASK
   // ------------------------------------------------------
-  async logTaskUnassignment(userId: string, task: any) {
+  async logTaskUnassignment(userId: string, task: Task) {
     return this.createLog({
       userId,
       taskId: task.id,
       groupId: task.groupId,
-      workspaceId: task.group?.workspaceId ?? null,
+      //workspaceId: task.group?.workspaceId ?? null,
       action: 'TASK_UNASSIGNED',
     });
   }
@@ -130,7 +130,7 @@ export class ActivityService {
   // ------------------------------------------------------
   async logStatusChange(
     userId: string,
-    task: any,
+    task: Task,
     oldStatus: string,
     newStatus: string,
   ) {
@@ -138,7 +138,7 @@ export class ActivityService {
       userId,
       taskId: task.id,
       groupId: task.groupId,
-      workspaceId: task.group?.workspaceId ?? null,
+      //workspaceId: task.group?.workspaceId ?? null,
       action: 'TASK_STATUS_CHANGED',
       metadata: {
         oldStatus,

@@ -10,6 +10,4 @@ export class CreateUserDto {
 
   @IsString()
   fullName!: string;
-
-
 }

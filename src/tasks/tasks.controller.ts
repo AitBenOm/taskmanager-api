@@ -21,6 +21,7 @@ import {
   QueryTaskDto,
   UpdateTaskDto,
 } from './dto/task.dto';
+import { User } from '@prisma/client';
 
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
@@ -31,16 +32,16 @@ export class TasksController {
   // CREATE TASK
   // ------------------------------------------------------
   @Post()
-  createTask(@GetUser() user, @Body() dto: CreateTaskDto) {
-    console.log('Creating task for user:', user.id);
-    return this.tasksService.createTask(user.id, dto);
+  createTask(@GetUser('id') userId: string, @Body() dto: CreateTaskDto) {
+    console.log('Creating task for user:', userId);
+    return this.tasksService.createTask(userId, dto);
   }
 
   // ------------------------------------------------------
   // GET TASKS WITH FILTERS + PAGINATION + SORTING
   // ------------------------------------------------------
   @Get()
-  getTasks(@GetUser('id') userId, @Query() query: QueryTaskDto) {
+  getTasks(@GetUser('id') userId: string, @Query() query: QueryTaskDto) {
     return this.tasksService.getTasks(userId, query);
   }
 
@@ -57,7 +58,7 @@ export class TasksController {
   // ------------------------------------------------------
   @Patch(':id')
   updateTask(
-    @GetUser() user,
+    @GetUser() user: User,
     @Param('id') id: string,
     @Body() dto: UpdateTaskDto,
   ) {
