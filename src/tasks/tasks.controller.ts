@@ -41,7 +41,7 @@ export class TasksController {
   // GET TASKS WITH FILTERS + PAGINATION + SORTING
   // ------------------------------------------------------
   @Get()
-  getTasks(@GetUser('id') userId, @Query() query: QueryTaskDto) {
+  getTasks(@GetUser('id') userId: string, @Query() query: QueryTaskDto) {
     return this.tasksService.getTasks(userId, query);
   }
 

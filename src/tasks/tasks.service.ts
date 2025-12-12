@@ -30,8 +30,9 @@ export class TasksService {
       dto.groupId,
     );
 
-    const workspaceId =
-      await this.groupsService.getGroupWorkspaceId(dto.groupId);
+    const workspaceId = await this.groupsService.getGroupWorkspaceId(
+      dto.groupId,
+    );
 
     if (!workspaceId) {
       throw new NotFoundException('Group does not belong to any workspace');
@@ -65,18 +66,16 @@ export class TasksService {
   // ------------------------------------------------------
   // GET TASKS WITH FILTERS
   // ------------------------------------------------------
-  async getTasks(
-    userId: string,
-    query: QueryTaskDto,
-  ): Promise<Task[]> {
+  async getTasks(userId: string, query: QueryTaskDto): Promise<Task[]> {
     const filters: Record<string, unknown> = {};
 
     // Filter by group
     if (query.groupId) {
       await this.groupsService.validateUserInGroup(userId, query.groupId);
 
-      const workspaceId =
-        await this.groupsService.getGroupWorkspaceId(query.groupId);
+      const workspaceId = await this.groupsService.getGroupWorkspaceId(
+        query.groupId,
+      );
 
       if (workspaceId) {
         await this.workspaceService.validateUserInWorkspace(
@@ -156,8 +155,9 @@ export class TasksService {
 
     await this.groupsService.validateUserInGroup(userId, task.groupId);
 
-    const workspaceId =
-      await this.groupsService.getGroupWorkspaceId(task.groupId);
+    const workspaceId = await this.groupsService.getGroupWorkspaceId(
+      task.groupId,
+    );
 
     await this.workspaceService.validateUserInWorkspace(userId, workspaceId);
 
@@ -184,8 +184,9 @@ export class TasksService {
       userId,
       existing.groupId,
     );
-    const workspaceId =
-      await this.groupsService.getGroupWorkspaceId(existing.groupId);
+    const workspaceId = await this.groupsService.getGroupWorkspaceId(
+      existing.groupId,
+    );
 
     await this.workspaceService.validateUserInWorkspace(userId, workspaceId);
 
@@ -312,10 +313,7 @@ export class TasksService {
   // ------------------------------------------------------
   // GET TASKS BY GROUP
   // ------------------------------------------------------
-  async getTasksByGroup(
-    userId: string,
-    groupId: string,
-  ): Promise<Task[]> {
+  async getTasksByGroup(userId: string, groupId: string): Promise<Task[]> {
     return this.prisma.task.findMany({
       where: {
         groupId,

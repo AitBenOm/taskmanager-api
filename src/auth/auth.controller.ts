@@ -1,10 +1,19 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+// src/auth/auth.controller.ts
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UseGuards,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request } from 'express';
+import { User } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 
 interface RequestWithUser extends Request {
-  user?: unknown;
+  user?: User | null;
 }
 
 @Controller('auth')
@@ -14,8 +23,14 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   login(@Req() req: RequestWithUser) {
-    console.log('AuthController → req.user.ts =', req?.user);
-    return this.authService.login(req.user as any);
+    const user = req.user ?? null;
+    console.log('AuthController → req.user.ts =', user);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return this.authService.login(user);
   }
 
   @Post('refresh')

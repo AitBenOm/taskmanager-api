@@ -22,7 +22,7 @@ export class GroupsService {
       throw new NotFoundException('Group not found');
     }
 
-    return group as Group;
+    return group;
   }
 
   // --------------------------------------------------------------------------
@@ -45,7 +45,7 @@ export class GroupsService {
       throw new ForbiddenException('You are not a member of this group');
     }
 
-    return membership as GroupMember;
+    return membership;
   }
 
   // --------------------------------------------------------------------------
@@ -54,7 +54,7 @@ export class GroupsService {
   // --------------------------------------------------------------------------
   async validateUserInGroup(
     userId: string,
-    groupId: any,
+    groupId: string,
   ): Promise<GroupMember> {
     // 1. Check group existence
     const group = await this.getGroupById(groupId);
@@ -79,7 +79,7 @@ export class GroupsService {
       include: { group: true },
     });
 
-    return memberships.map((m) => m.group as Group);
+    return memberships.map((m) => m.group);
   }
 
   // --------------------------------------------------------------------------

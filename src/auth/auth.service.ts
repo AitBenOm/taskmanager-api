@@ -26,7 +26,7 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<User> {
-    const user = (await this.usersService.findByMail(email)) as User | null;
+    const user = await this.usersService.findByMail(email);
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -37,7 +37,7 @@ export class AuthService {
     if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
     // example debug hash (non-blocking)
-    bcrypt.hash('000000', 10).then(console.log);
+    await bcrypt.hash('000000', 10).then(console.log);
 
     return user;
   }
@@ -48,7 +48,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      role: user?.role ?? null,
+      //role: user?.role ?? null,
     };
 
     const accessToken = this.jwtService.sign(payload, {
