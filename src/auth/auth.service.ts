@@ -1,7 +1,17 @@
+// src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
+
+
+
+interface JwtPayload {
+  sub: string;
+  email: string;
+  role?: string | null;
+}
 
 @Injectable()
 export class AuthService {
@@ -17,26 +27,30 @@ export class AuthService {
     return bcrypt.compare(plainTextPassword, hashedPassword);
   }
 
-  async validateUser(email: string, password: string) {
-    const user = await this.usersService.findByMail(email);
+  async validateUser(email: string, password: string): Promise<User> {
+    const user = (await this.usersService.findByMail(email)) as User | null;
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
+
     // Compare bcrypt hashes
-    const isValid = await bcrypt.compare(password, user.password);
+    const isValid = await this.verifyPassword(password, user.password ?? '');
     console.log('bcrypt.compare →', isValid);
 
     if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
+    // example debug hash (non-blocking)
     bcrypt.hash('000000', 10).then(console.log);
 
     return user;
   }
 
-  async login(user: any) {
-    const payload = {
+  async login(
+    user: User,
+  ): Promise<{ access_token: string; refresh_token: string }> {
+    const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      role: user.role,
+      role: user?.role ?? null,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -61,15 +75,21 @@ export class AuthService {
   async refreshTokens(refreshToken: string) {
     try {
       // decode token (does NOT verify secret)
-      const decoded = this.jwtService.decode(refreshToken) as any;
+      const decoded = this.jwtService.decode(refreshToken);
 
-      if (!decoded || !decoded.sub) {
+      if (
+        typeof decoded !== 'object' ||
+        decoded === null ||
+        !('sub' in decoded)
+      ) {
         throw new UnauthorizedException('Invalid refresh token');
       }
-      const user = await this.usersService.findById(decoded.sub);
+
+      const sub = String((decoded as Record<string, unknown>).sub);
+      const user = (await this.usersService.findById(sub)) as User | null;
 
       if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Token expired or user.ts logged out');
+        throw new UnauthorizedException('Token expired or user logged out');
       }
 
       // compare refresh token with stored hashed version
@@ -80,10 +100,11 @@ export class AuthService {
 
       // ROTATION: generate new access token + new refresh token
       return this.login(user); // login() will rotate tokens automatically
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
+
   async logout(userId: string) {
     // Remove the refresh token from the database
     await this.usersService.updateuser(userId, null);
