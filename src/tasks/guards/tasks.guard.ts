@@ -4,13 +4,36 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GroupsService } from 'src/groups/groups.service';
 
+/**
+ * Extend Express Request ONLY with what Express does not know about.
+ * Never redefine body / params / query.
+ */
 interface RequestWithUser extends Request {
   user?: { id: string } | null;
+}
+
+/**
+ * Lint-safe + TypeScript-safe helper to extract a string property from unknown.
+ * This avoids repeating verbose guards everywhere.
+ */
+function getStringProp(
+  value: unknown,
+  key: string,
+): string | undefined {
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    key in value &&
+    typeof (value as Record<string, unknown>)[key] === 'string'
+  ) {
+    return (value as Record<string, unknown>)[key] as string;
+  }
+
+  return undefined;
 }
 
 @Injectable()
@@ -18,75 +41,84 @@ export class TasksGuard implements CanActivate {
   constructor(
     private readonly prisma: PrismaService,
     private readonly groupsService: GroupsService,
-    private readonly reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const user = request.user;
 
+    // --------------------------------------------------
+    // 0. User must be authenticated
+    // --------------------------------------------------
     if (!user?.id) {
       throw new ForbiddenException('User not authenticated');
     }
 
-    let taskId: string | undefined;
-    if (typeof request.params?.id === 'string') {
-      taskId = request.params.id;
-    }
-
-    let groupIdFromQuery: string | undefined;
-    const q = request.query?.groupId;
-    if (typeof q === 'string') {
-      groupIdFromQuery = q;
-    } else if (Array.isArray(q) && q.length > 0 && typeof q[0] === 'string') {
-      groupIdFromQuery = q[0];
-    }
-
-    const body: unknown = request.body;
-
-    const groupIdFromBody =
-      typeof body === 'object' &&
-      body !== null &&
-      'groupId' in body &&
-      typeof (body as Record<string, unknown>).groupId === 'string'
-        ? (body as Record<string, unknown>).groupId
+    // --------------------------------------------------
+    // 1. Extract identifiers safely (strict lint + TS)
+    // --------------------------------------------------
+    const taskId =
+      typeof request.params?.id === 'string'
+        ? request.params.id
         : undefined;
 
-    // ---------------------------------------------
-    // 1. If taskId is provided → validate access to that task
-    // ---------------------------------------------
+    const groupIdFromQuery = getStringProp(
+      request.query as unknown,
+      'groupId',
+    );
+
+    const groupIdFromBody = getStringProp(
+      request.body as unknown,
+      'groupId',
+    );
+
+    // --------------------------------------------------
+    // 2. If taskId exists → validate access to the task
+    // --------------------------------------------------
     if (taskId) {
       const task = await this.prisma.task.findUnique({
         where: { id: taskId },
       });
 
       if (!task) {
-        throw new ForbiddenException('Task does not exist or access is denied');
+        throw new ForbiddenException(
+          'Task does not exist or access is denied',
+        );
       }
 
-      await this.groupsService.validateUserInGroup(user.id, task.groupId);
+      await this.groupsService.validateUserInGroup(
+        user.id,
+        task.groupId,
+      );
+
       return true;
     }
 
-    // ---------------------------------------------
-    // 2. validate groupId in query → listing/filtering
-    // ---------------------------------------------
+    // --------------------------------------------------
+    // 3. groupId in query → listing / filtering
+    // --------------------------------------------------
     if (groupIdFromQuery) {
-      await this.groupsService.validateUserInGroup(user.id, groupIdFromQuery);
+      await this.groupsService.validateUserInGroup(
+        user.id,
+        groupIdFromQuery,
+      );
       return true;
     }
 
-    // ---------------------------------------------
-    // 3. validate groupId in body → creation
-    // ---------------------------------------------
+    // --------------------------------------------------
+    // 4. groupId in body → creation
+    // --------------------------------------------------
     if (groupIdFromBody) {
-      await this.groupsService.validateUserInGroup(user.id, groupIdFromBody);
+      await this.groupsService.validateUserInGroup(
+        user.id,
+        groupIdFromBody,
+      );
       return true;
     }
 
-    // ---------------------------------------------
-    // 4. Default allow → getTasks() enforces filtering
-    // ---------------------------------------------
+    // --------------------------------------------------
+    // 5. Default allow (service enforces filtering)
+    // --------------------------------------------------
     return true;
   }
 }
