@@ -48,7 +48,7 @@ export class WorkspaceController {
     console.log('User ID:', userId);
     return this.workspaceService.getWorkspacesByUserid(userId);
   }
-  @Get('workspaceId')
+  @Get(':workspaceId')
   @UseGuards(JwtAuthGuard)
   getWorkspaceById(
     @GetUser('id') userId: string,

@@ -145,6 +145,11 @@ export class WorkspaceService {
         groups: {
           include: {
             tasks: true,
+            members: {
+              include: {
+                user: true, // get full user info for each member
+              },
+            },
           },
         },
         members: {
@@ -156,6 +161,26 @@ export class WorkspaceService {
     });
   }
   async getWorkspacesByid(userId: string, workspaceId: string) {
-    return this.validateUserInWorkspace(userId, workspaceId);
+    const workspace = await this.validateUserInWorkspace(userId, workspaceId);
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found or access denied');
+    }
+    return this.prisma.workspace.findUnique({
+      where: {
+        id: workspaceId,
+      },
+      include: {
+        groups: {
+          include: {
+            tasks: true,
+          },
+        },
+        members: {
+          include: {
+            user: true, // get full user info for each member
+          },
+        },
+      },
+    });
   }
 }

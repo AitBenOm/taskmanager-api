@@ -16,6 +16,14 @@ export class GroupsService {
   async getGroupById(groupId: string): Promise<Group> {
     const group = await this.prisma.group.findUnique({
       where: { id: groupId },
+      include: {
+        tasks: true,
+        members: {
+          include: {
+            user: true,
+          },
+        },
+      },
     });
 
     if (!group) {
