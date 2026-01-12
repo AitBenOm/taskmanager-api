@@ -14,6 +14,10 @@ import { NotificationsController } from './notifications/notifications.controlle
 import { NotificationsService } from './notifications/notifications.service';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ActivityModule } from './activity/activity.module';
+import { ContextService } from './context/context.service';
+import { ContextController } from './context/context.controller';
+import { GroupsController } from './groups/groups.controller';
+import { GroupsService } from './groups/groups.service';
 
 @Module({
   imports: [
@@ -30,8 +34,20 @@ import { ActivityModule } from './activity/activity.module';
     CalendarModule,
     NotificationsModule,
     ActivityModule,
+    GroupsModule,
   ],
-  controllers: [AppController, NotificationsController],
-  providers: [AppService, UsersService, NotificationsService],
+  controllers: [
+    AppController,
+    NotificationsController,
+    ContextController,
+    GroupsController,
+  ],
+  providers: [
+    AppService,
+    UsersService,
+    NotificationsService,
+    ContextService,
+    GroupsService,
+  ],
 })
 export class AppModule {}
